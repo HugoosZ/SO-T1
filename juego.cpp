@@ -20,6 +20,7 @@ using namespace std;
 
 int main(){
     cout << "[Juego] Iniciando proceso principal." << endl;
+    srand(static_cast<unsigned int>(std::time(nullptr)));
 
     int fd,sumt= 0;
     int shmid = shmget(IPC_PRIVATE, sizeof(int) * 2, IPC_CREAT | 0666);
@@ -34,9 +35,7 @@ int main(){
         perror("Error adjuntando segmento de memoria compartida");
         exit(1);
     }
-
-    // Definir las dos variables en distintas posiciones dentro del segmento
-    int *time = base;          // La primera variable apunta al inicio del segmento
+    int *time = base;          
     *time = rand() % 4 + 1;
     int *sumacumulada = base + 1;  
     *sumacumulada = 0; 
@@ -103,6 +102,7 @@ int main(){
         }
         else if (pid == 0) {
             pos = i;
+            srand(static_cast<unsigned int>(std::time(nullptr)) + getpid());
             break;
         }
     }
@@ -120,36 +120,23 @@ int main(){
     int sillas = n-1;
     *liberador = 0;
 
-    if(pos == -1){
-        while(*liberador==0){
 
-        }
-        cout<<"Termino el padre"<<endl;
-        exit(0);
-    }
-    else{
     
-        
         while (sillas > 0 ) {
+            int vote = 0;
+
             if(pos == 0){
                 cout<<"Cantidad de sillas "<<sillas<<endl;
             }
             sumt = 0;
-            fd = open(FIFO_NAME, O_WRONLY);
 
-            int vote = rand() % n + 1;
+            vote = rand() % n + 1;
             if(pos>0){
-                while(true){
-                    if(expulsados[vote] == 0 ){
-                        break;
-                    }
-                    else{
-                        vote = rand() % n + 1;
-                        if(expulsados[vote] == 0){
-                            break;
-                        }
-                    }
-                }
+                fd = open(FIFO_NAME, O_WRONLY);
+
+            while (expulsados[vote] != 0) {
+                vote = rand() % n + 1;
+            }
                 
                 if(write(fd, &vote, sizeof(vote))){
                     *votantes=*votantes+1;
@@ -164,10 +151,11 @@ int main(){
             while(*sincronizadorbool == 0){
                 sleep(1);
             }
-            close(fd);
+            if(pos>0){
+                close(fd);
+            }
 
-            *sumacumulada = 0;
-            *sumacumuladaux = 0;  
+           
 
             if(pos>0){
                 cout << "[Juego] Voto del jugador: " << pos << " es: " << vote<< " cuando quedan: "<<sillas <<" sillas"<< endl;
@@ -176,7 +164,6 @@ int main(){
             }
 
 
-            *votantes = 0;
 
             int exp = 0;
             if(pos == 0){
@@ -184,10 +171,7 @@ int main(){
                 ssize_t bytes_read = read(fd, &exp, sizeof(exp));
                 close(fd);
                 cout << "[Juego] Expulsado: " << exp << endl;
-                *expulsado = exp; //2
-                *sumacumulada = *expulsado*(sillas+1); //8
-                cout<<"La sumaacumulada es "<<*sumacumulada<<" donde sillas vale: " <<sillas<<" y expulsado vale: "<<*expulsado<<endl; 
-
+                *expulsado = exp;
             }
 
             while(*expulsado == 0){
@@ -199,53 +183,46 @@ int main(){
             cout<<"El expulsado es "<<*expulsado<<" En el proceso " << pos<<endl;
 
             }
-
             sleep(1);
-            if(pos>0){
-            sumt=*expulsado; //2
-            cout<<"La sumt es "<<sumt<<endl;
-            }
-
             contadordeexpulsadosfinal++;
-            if(pos>0){
-                if (pos == *expulsado ) {
+        
+                if (pos == *expulsado && pos > 0) {
                     cout << "[Juego] Proceso en posición " << pos << " fue eliminado!!!!!!!!!!!!!!" << endl;
                     execlp("./amurra_y_reclama", "", NULL);
                 }   
                 else {
-                    *sumacumuladaux += sumt; //6
-                    cout<<"La sumaacumulada es "<<*sumacumulada<<endl; 
-                    cout<<"La sumacumuladaux es "<<*sumacumuladaux<<endl; 
                     expulsados[*expulsado] = 1;
-                    while (*sumacumulada-*expulsado != *sumacumuladaux) {
-                        sleep(1);
-                    }
                     if(pos>0){
-                        *sincro=1;
-                        *sincronizadorbool = 0;
+                        (*sumacumuladaux)++;
+
+
+                        while(*sumacumuladaux != *votantes-1 ){
+
+                        }
+                        sleep(1);
+                        *sincro = 1;
+
                     }
                 }
                 sleep(5);
-                for(int i = 1; i <= n; i++){
-                    if(expulsados[i] == 1){
-                        cout<<"el jugador en la pos: "<<i<<" esta expulsado "<<endl;
-                    }
-                }
+
                 exp=0;
-
-
-
-            }
-            if(pos==0){
+                if(pos==0){
                     while(*sincro==0){
                         if(contadordeexpulsadosfinal == n){
                             break;
                         }
                     }
+                    *votantes = 0;
+                    *sumacumuladaux = 0;
                     *sincronizadorbool = 0;
                     *sincro=0;
-
+                for(int i = 1; i <= n; i++){
+                    if(expulsados[i] == 1){
+                        cout<<"el jugador en la pos: "<<i<<" esta expulsado "<<endl;
+                    }
                 }
+            }
             exp = 0;             
             sillas--;
             ganadores = 0;
@@ -253,7 +230,7 @@ int main(){
             
 
         }
-    }
+    
     
     *liberador = 1;
     if(pos == 0){

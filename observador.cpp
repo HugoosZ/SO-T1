@@ -10,84 +10,103 @@
 #include <iostream>
 #include <sys/ipc.h>
 #include <sys/shm.h> 
+#include <vector>
+
 #define FIFO_NAME "fifo_comunicacion"  // Nombre compartido del FIFO
 
 using namespace std;
 
 int main(){
+    srand(static_cast<unsigned int>(std::time(nullptr)));
+
     cout << "[Observador] Iniciando proceso observador." << endl;
     if (access(FIFO_NAME, F_OK) != 0) { 
         if (mkfifo(FIFO_NAME, 0666) == -1) {
             perror("mkfifo");
             exit(-1);
         }
-        cout << "[Observador]FIFO creado: " << FIFO_NAME << endl;
+        cout << "[Observador] FIFO creado: " << FIFO_NAME << endl;
     } else {
         cout << "[Observador] FIFO ya existe, omitiendo la creación." << endl;
     }
+
     int fd, exp;
     fd = open(FIFO_NAME, O_RDONLY);
-    cout << "[Observador] FIFO abierto para lectura: " << FIFO_NAME << "con valor "<<fd<<endl;
+    cout << "[Observador] FIFO abierto para lectura: " << FIFO_NAME << " con valor " << fd << endl;
 
-    int n = 0 ;
+    int n = 0;
     ssize_t njugadores = read(fd, &n, sizeof(n)); // Lee el número de jugadores
     close(fd);
     cout << "[Observador] Número de jugadores recibido: " << n << endl;
-    int votos[n];
 
+    int votos[n];
     int sillas = n - 1;
-    while(sillas > 0){
-        cout << "[Observador] Cantidad de sillas restantes: "<<sillas << endl;
+
+    while (sillas > 0) {
+        cout << "[Observador] Cantidad de sillas restantes: " << sillas << endl;
+
+        // Inicializar todos los votos en 0
         for (int i = 0; i < n; i++) {
-            votos[i] = 0;  // Inicializar todos los votos en 0
+            votos[i] = 0;
         }
 
+        // Leer los votos de los jugadores
         fd = open(FIFO_NAME, O_RDONLY);
         while (true) {
             int voto;
-
             ssize_t bytes_read = read(fd, &voto, sizeof(voto));
             if (bytes_read == 0) {
                 break;
             }
-            if(voto > 0){
+            if (voto > 0) {
                 cout << "[Observador] Voto recibido: " << voto << endl;
-                votos[voto-1]++;
-                
+                votos[voto - 1]++;
             }
         }
-        
         close(fd);
-        for(int i = 0; i < n; i++){
-            if(votos[i]>0){
-                cout << "[Observador] Votos en contra del jugador " << i+1 << ": " << votos[i] << endl;
 
+        // Mostrar los votos
+        for (int i = 0; i < n; i++) {
+            if (votos[i] > 0) {
+                cout << "[Observador] Votos en contra del jugador " << i + 1 << ": " << votos[i] << endl;
             }
         }
-        cout << "Pre for" << endl;
 
+        // Encontrar el número máximo de votos
         int comparador = 0;
-        int posmayor = 0;
         for (int i = 0; i < n; i++) {
             if (comparador < votos[i]) {
-                posmayor = i + 1;
+                comparador = votos[i];
             }
         }
-        cout << "post for" << endl;
 
+        // Recoger jugadores empatados con el número máximo de votos
+        vector<int> mayores;
+        for (int i = 0; i < n; i++) {
+            if (votos[i] == comparador) {
+                mayores.push_back(i + 1);  // Guardar el número del jugador (1-indexado)
+            }
+        }
+
+        // Si hay empate, seleccionar un jugador aleatoriamente entre los empatados
+        int posmayor = mayores[0];
+        if (mayores.size() > 1) {
+            int random = rand() % mayores.size();  // Seleccionar aleatoriamente uno de los empatados
+            posmayor = mayores[random];
+        }
+
+        // Escribir el jugador con mayor número de votos (a eliminar)
         fd = open(FIFO_NAME, O_WRONLY);
-        cout << "[Observador] FIFO abierto para escritura: " << FIFO_NAME << "con valor "<<fd<<endl;
+        cout << "[Observador] FIFO abierto para escritura: " << FIFO_NAME << " con valor " << fd << endl;
 
         write(fd, &posmayor, sizeof(posmayor));
         cout << "[Observador] Jugador con mayor voto (a eliminar): " << posmayor << endl;
-    
+
         close(fd);
-
-
 
         sillas--;
     }
-    
+
     cout << "[Observador] Finalizando proceso observador." << endl;
-    return(0);
+    return 0;
 }
