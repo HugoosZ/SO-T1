@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "C/C++ Runner: Debug Session",
+      "type": "lldb",
+      "request": "launch",
+      "args": [],
+      "cwd": "/Users/hugo/workspace/6toSemestre/SO/codigosCatedra/T1",
+      "program": "/Users/hugo/workspace/6toSemestre/SO/codigosCatedra/T1/build/Debug/outDebug"
+    }
+  ]
+}
