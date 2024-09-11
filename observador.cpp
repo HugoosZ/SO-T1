@@ -37,7 +37,7 @@ int main(){
 
     int sillas = n - 1;
     while(sillas > 0){
-
+        cout << "[Observador] Cantidad de sillas restantes: "<<sillas << endl;
         for (int i = 0; i < n; i++) {
             votos[i] = 0;  // Inicializar todos los votos en 0
         }
@@ -50,8 +50,11 @@ int main(){
             if (bytes_read == 0) {
                 break;
             }
-            cout << "[Observador] Voto recibido: " << voto << endl;
-            votos[voto-1]++;
+            if(voto > 0){
+                cout << "[Observador] Voto recibido: " << voto << endl;
+                votos[voto-1]++;
+                
+            }
         }
         
         close(fd);
@@ -61,6 +64,7 @@ int main(){
 
             }
         }
+        cout << "Pre for" << endl;
 
         int comparador = 0;
         int posmayor = 0;
@@ -69,8 +73,11 @@ int main(){
                 posmayor = i + 1;
             }
         }
-        close(fd);
+        cout << "post for" << endl;
+
         fd = open(FIFO_NAME, O_WRONLY);
+        cout << "[Observador] FIFO abierto para escritura: " << FIFO_NAME << "con valor "<<fd<<endl;
+
         write(fd, &posmayor, sizeof(posmayor));
         cout << "[Observador] Jugador con mayor voto (a eliminar): " << posmayor << endl;
     

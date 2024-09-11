@@ -40,8 +40,8 @@ int main(){
     *time = rand() % 4 + 1;
     int *sumacumulada = base + 1;  
     *sumacumulada = 0; 
-    int *sincronizadorpid = base + 2;  
-    pid_t *sincronizador = (pid_t*) sincronizadorpid;
+    int *sincro = base + 2;  
+    *sincro = 0;
     int *sincronizadorbool = base + 3;
     *sincronizadorbool = 0;
     int *expulsado = base + 4;  
@@ -49,10 +49,12 @@ int main(){
     int *sumacumuladaux = base + 5;  
     *sumacumuladaux = 0;  
     int *liberador = base + 6;  
-
+    int *votantes = base + 7;  
+    *votantes = 0;
     int ganadores = 0;
     int n = 0;
     int contadordeexpulsados = 0;
+    int contadordeexpulsadosfinal=0;
 
     cout<<"El tiempo de la cancion es" <<*time<<endl;
 
@@ -108,27 +110,17 @@ int main(){
 
 
 
-
-    *sincronizador = getpid();
     int posaux = pos;
     
-    while(*sincronizadorbool == 0){
-        sleep(1);
-        if(*sincronizadorpid == getpid()){
-            for(int i = 1; i <= n; i++){
-            }
-            *sincronizadorbool = 1;
-        }
-    }
+
     
-    cout << "Sali del while con pos = " << pos << endl;
 
         
 
     int sillas = n-1;
     *liberador = 0;
 
-    if(pos == 0){
+    if(pos == -1){
         while(*liberador==0){
 
         }
@@ -139,112 +131,133 @@ int main(){
     
         
         while (sillas > 0 ) {
-            
-            *sincronizador = getpid();
-
+            if(pos == 0){
+                cout<<"Cantidad de sillas "<<sillas<<endl;
+            }
             sumt = 0;
-
-            *sumacumuladaux = 0;  
-
             fd = open(FIFO_NAME, O_WRONLY);
-            
-            cout<<"apertura de fifo de votacion con valor" <<fd<<endl;
 
             int vote = rand() % n + 1;
-
-            while(true){
-                if(expulsados[vote] == 0 ){
-                    break;
-                }
-                else{
-                    vote = rand() % n + 1;
-                    if(expulsados[vote] == 0){
+            if(pos>0){
+                while(true){
+                    if(expulsados[vote] == 0 ){
                         break;
                     }
-                }
-            }
-            
-            cout << "[Juego] voto: " << vote << " de jugador " << pos<< "cuando quedan "<<sillas <<" sillas"<< endl;
-
-            write(fd, &vote, sizeof(vote));
-            sleep(5);
-            close(fd);
-            for(int i=1;i<=n;i++){ //se puede quitar por el tema de las sillas!
-                if(expulsados[i]==0){   
-                    ganadores++;
-                }
-            }
-            int exp = 0;
-            fd = open(FIFO_NAME, O_RDONLY);
-            ssize_t bytes_read = read(fd, &exp, sizeof(exp));
-            close(fd);
-            cout<<"El valor de exp es "<<exp<<" En el proceso " << pos<<endl;
-            if(exp > 0){
-                *expulsado = exp;
-                *sumacumulada = *expulsado*ganadores; 
-            }
-            cout<<"El expulsado es "<<*expulsado<<" En el proceso " << pos<<endl;
-            
-            while(*expulsado == 0){
-
-
-            }
-            sleep(5);
-            sumt=*expulsado;
-            cout<<"La sumt es "<<sumt<<endl;
-
-            
-            cout << "[Juego] Recibido jugador a eliminar: " << *expulsado << "cuando quedan "<<sillas <<" sillas"<<endl;
-            *sincronizador = getpid();
-            sleep(5);
-            if (pos == *expulsado) {
-                cout << "[Juego] Proceso en posición " << pos << " fue eliminado!!!!!!!!!!!!!!" << endl;
-                execlp("./amurra_y_reclama", "", NULL);
-            }   
-            else {
-                *sumacumuladaux += sumt;
-                cout<<"La sumacumuladaux es "<<*sumacumuladaux<<endl;
-                
-                expulsados[*expulsado] = 1;
-                for(int i=1;i<=n;i++){
-                    if(expulsados[i]==1){
-                        contadordeexpulsados++;
+                    else{
+                        vote = rand() % n + 1;
+                        if(expulsados[vote] == 0){
+                            break;
+                        }
                     }
                 }
-                cout<<"contadordeexpulsados vale "<<contadordeexpulsados<<endl;
+                
+                if(write(fd, &vote, sizeof(vote))){
+                    *votantes=*votantes+1;
+                    if(*votantes == (sillas+1)){
+                        *sincronizadorbool = 1;
 
-                while (*sumacumulada-*expulsado != *sumacumuladaux) {
-                    sleep(1);
+                    }
                 }
+                    cout<<"El voto del proceso "<<pos<<" es "<<vote<<endl;
             }
-            cout<<"Proceso"<<pos<<"pasó el while"<<endl;
 
-            expulsados[*expulsado] = 1;
-            sleep(5);
-            for(int i = 1; i <= n; i++){
-                cout<<"La pos "<<i<<" vale "<<expulsados[i]<<endl;
-            }
-            exp=0;
-            sumt = sumt - exp;
-            sillas--;
-            *sumacumulada = 0;
             while(*sincronizadorbool == 0){
                 sleep(1);
-                if(*sincronizadorpid == getpid()){
-                    for(int i = 1; i <= n; i++){
-                    }
-                    *sincronizadorbool = 1;
-                }
             }
+            close(fd);
+
+            *sumacumulada = 0;
+            *sumacumuladaux = 0;  
+
+            if(pos>0){
+                cout << "[Juego] Voto del jugador: " << pos << " es: " << vote<< " cuando quedan: "<<sillas <<" sillas"<< endl;
+
+                sleep(5);
+            }
+
+
+            *votantes = 0;
+
+            int exp = 0;
+            if(pos == 0){
+                fd = open(FIFO_NAME, O_RDONLY); 
+                ssize_t bytes_read = read(fd, &exp, sizeof(exp));
+                close(fd);
+                cout << "[Juego] Expulsado: " << exp << endl;
+                *expulsado = exp; //2
+                *sumacumulada = *expulsado*(sillas+1); //8
+                cout<<"La sumaacumulada es "<<*sumacumulada<<" donde sillas vale: " <<sillas<<" y expulsado vale: "<<*expulsado<<endl; 
+
+            }
+
+            while(*expulsado == 0){
+                sleep(1);
+            }
+            
+
+            if(pos>0){
+            cout<<"El expulsado es "<<*expulsado<<" En el proceso " << pos<<endl;
+
+            }
+
+            sleep(1);
+            if(pos>0){
+            sumt=*expulsado; //2
+            cout<<"La sumt es "<<sumt<<endl;
+            }
+
+            contadordeexpulsadosfinal++;
+            if(pos>0){
+                if (pos == *expulsado ) {
+                    cout << "[Juego] Proceso en posición " << pos << " fue eliminado!!!!!!!!!!!!!!" << endl;
+                    execlp("./amurra_y_reclama", "", NULL);
+                }   
+                else {
+                    *sumacumuladaux += sumt; //6
+                    cout<<"La sumaacumulada es "<<*sumacumulada<<endl; 
+                    cout<<"La sumacumuladaux es "<<*sumacumuladaux<<endl; 
+                    expulsados[*expulsado] = 1;
+                    while (*sumacumulada-*expulsado != *sumacumuladaux) {
+                        sleep(1);
+                    }
+                    if(pos>0){
+                        *sincro=1;
+                        *sincronizadorbool = 0;
+                    }
+                }
+                sleep(5);
+                for(int i = 1; i <= n; i++){
+                    if(expulsados[i] == 1){
+                        cout<<"el jugador en la pos: "<<i<<" esta expulsado "<<endl;
+                    }
+                }
+                exp=0;
+
+
+
+            }
+            if(pos==0){
+                    while(*sincro==0){
+                        if(contadordeexpulsadosfinal == n){
+                            break;
+                        }
+                    }
+                    *sincronizadorbool = 0;
+                    *sincro=0;
+
+                }
+            exp = 0;             
+            sillas--;
             ganadores = 0;
             contadordeexpulsados = 0;
+            
 
         }
     }
     
     *liberador = 1;
     if(pos == 0){
-        sleep(1);
+        wait(NULL);
         cout<<"Termino el padre"<<endl;
         exit(0);
     }
