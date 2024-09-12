@@ -65,14 +65,12 @@ int main(){
         }
         close(fd);
 
-        // Mostrar los votos
         for (int i = 0; i < n; i++) {
             if (votos[i] > 0) {
                 cout << "[Observador] Votos en contra del jugador " << i + 1 << ": " << votos[i] << endl;
             }
         }
 
-        // Encontrar el número máximo de votos
         int comparador = 0;
         for (int i = 0; i < n; i++) {
             if (comparador < votos[i]) {
@@ -80,22 +78,20 @@ int main(){
             }
         }
 
-        // Recoger jugadores empatados con el número máximo de votos
         vector<int> mayores;
         for (int i = 0; i < n; i++) {
             if (votos[i] == comparador) {
-                mayores.push_back(i + 1);  // Guardar el número del jugador (1-indexado)
+                mayores.push_back(i + 1);  
             }
         }
 
-        // Si hay empate, seleccionar un jugador aleatoriamente entre los empatados
+        
         int posmayor = mayores[0];
         if (mayores.size() > 1) {
-            int random = rand() % mayores.size();  // Seleccionar aleatoriamente uno de los empatados
+            int random = rand() % mayores.size();  
             posmayor = mayores[random];
         }
 
-        // Escribir el jugador con mayor número de votos (a eliminar)
         fd = open(FIFO_NAME, O_WRONLY);
         cout << "[Observador] FIFO abierto para escritura: " << FIFO_NAME << " con valor " << fd << endl;
 
