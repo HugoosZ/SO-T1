@@ -19,6 +19,14 @@
 using namespace std;
 
 int main(){
+    if (system("g++ ./Observador.cpp") != 0) { 
+            cerr << "Error al compilar Observador.cpp" << endl;
+            return 1;
+    }
+    //if (system("./Observador &") == -1) { //ejecución observador
+      //          cerr << "Error al ejecutar el observador" << endl;
+         //       return 1;
+    //}
     cout << "[Juego] Iniciando proceso principal." << endl;
     srand(static_cast<unsigned int>(std::time(nullptr)));
 
