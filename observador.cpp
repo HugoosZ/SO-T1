@@ -19,38 +19,27 @@ using namespace std;
 int main(){
     srand(static_cast<unsigned int>(std::time(nullptr)));
 
-    cout << "[Observador] Iniciando proceso observador." << endl;
     if (access(FIFO_NAME, F_OK) != 0) { 
         if (mkfifo(FIFO_NAME, 0666) == -1) {
             perror("mkfifo");
             exit(-1);
         }
         cout << "[Observador] FIFO creado: " << FIFO_NAME << endl;
-    } else {
-        cout << "[Observador] FIFO ya existe, omitiendo la creación." << endl;
-    }
+    } 
 
     int fd, exp;
     fd = open(FIFO_NAME, O_RDONLY);
-    cout << "[Observador] FIFO abierto para lectura: " << FIFO_NAME << " con valor " << fd << endl;
-
     int n = 0;
     ssize_t njugadores = read(fd, &n, sizeof(n)); // Lee el número de jugadores
     close(fd);
-    cout << "[Observador] Número de jugadores recibido: " << n << endl;
-
     int votos[n];
     int sillas = n - 1;
 
     while (sillas > 0) {
-        cout << "[Observador] Cantidad de sillas restantes: " << sillas << endl;
 
-        // Inicializar todos los votos en 0
         for (int i = 0; i < n; i++) {
             votos[i] = 0;
         }
-
-        // Leer los votos de los jugadores
         fd = open(FIFO_NAME, O_RDONLY);
         while (true) {
             int voto;
@@ -59,17 +48,18 @@ int main(){
                 break;
             }
             if (voto > 0) {
-                cout << "[Observador] Voto recibido: " << voto << endl;
                 votos[voto - 1]++;
             }
         }
         close(fd);
-
+        cout<<"-------------------------"<<endl;
         for (int i = 0; i < n; i++) {
             if (votos[i] > 0) {
                 cout << "[Observador] Votos en contra del jugador " << i + 1 << ": " << votos[i] << endl;
             }
         }
+        cout<<"-------------------------"<<endl;
+
 
         int comparador = 0;
         for (int i = 0; i < n; i++) {
@@ -88,13 +78,18 @@ int main(){
         
         int posmayor = mayores[0];
         if (mayores.size() > 1) {
+            cout << "Hay un empate, se elegirá a un jugador de manera aleatoria" << endl;
+            cout<<"-------------------------"<<endl;
+
             int random = rand() % mayores.size();  
             posmayor = mayores[random];
         }
 
-        fd = open(FIFO_NAME, O_WRONLY);
-        cout << "[Observador] FIFO abierto para escritura: " << FIFO_NAME << " con valor " << fd << endl;
-
+        int fd = open(FIFO_NAME, O_WRONLY);
+        if (fd == -1) {
+            cerr << "Error al abrir FIFO para escribir voto." << endl;
+            continue;
+        }
         write(fd, &posmayor, sizeof(posmayor));
         cout << "[Observador] Jugador con mayor voto (a eliminar): " << posmayor << endl;
 
@@ -102,7 +97,5 @@ int main(){
 
         sillas--;
     }
-
-    cout << "[Observador] Finalizando proceso observador." << endl;
     return 0;
 }

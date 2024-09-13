@@ -28,8 +28,7 @@ int main(){
          //       return 1;
     //}
     cout << "[Juego] Iniciando proceso principal." << endl;
-    srand(static_cast<unsigned int>(std::time(nullptr)));
-
+    srand(time(NULL) + getpid());
     int fd,sumt= 0;
     int shmid = shmget(IPC_PRIVATE, sizeof(int) * 2, IPC_CREAT | 0666);
     if (shmid == -1) {
@@ -43,8 +42,8 @@ int main(){
         perror("Error adjuntando segmento de memoria compartida");
         exit(1);
     }
-    int *time = base;          
-    *time = rand() % 4 + 1;
+    int *t = base;          
+    *t = (rand() % 4) + 1;
     int *sumacumulada = base + 1;  
     *sumacumulada = 0; 
     int *sincro = base + 2;  
@@ -79,10 +78,6 @@ int main(){
     write(fd, &n, sizeof(n));
     cout << "[Juego] Enviando cantidad de jugadores: " << n << " a observador." << endl;
     close(fd);
-    for(int i = 1; i <= n; i++){ //Sumatoria
-        sumt += i;
-    }
-    cout<<"La suma es "<<sumt<<endl;
 
     if (access(FIFO_NAME, F_OK) != 0) { 
         if (mkfifo(FIFO_NAME, 0666) == -1) {
@@ -110,7 +105,8 @@ int main(){
         }
         else if (pid == 0) {
             pos = i;
-            srand(static_cast<unsigned int>(std::time(nullptr)) + getpid());
+            srand(time(NULL) + getpid());
+
             break;
         }
     }
@@ -136,14 +132,13 @@ int main(){
             if(pos == 0){
                 cout<<"Cantidad de sillas "<<sillas<<endl;
             }
-            sumt = 0;
 
-            vote = rand() % n + 1;
+            vote = (rand() % n) + 1;
             if(pos>0){
                 fd = open(FIFO_NAME, O_WRONLY);
 
             while (expulsados[vote] != 0) {
-                vote = rand() % n + 1;
+                vote = (rand() % n) + 1;
             }
                 
                 if(write(fd, &vote, sizeof(vote))){
@@ -166,18 +161,23 @@ int main(){
            
 
             if(pos>0){
-                cout << "[Juego] Voto del jugador: " << pos << " es: " << vote<< " cuando quedan: "<<sillas <<" sillas"<< endl;
-
-                sleep(5);
+                sleep(2);
             }
 
 
 
             int exp = 0;
             if(pos == 0){
+                
                 fd = open(FIFO_NAME, O_RDONLY); 
                 ssize_t bytes_read = read(fd, &exp, sizeof(exp));
+                
                 close(fd);
+                if(exp == 0){
+                    cout<<"WELTAAA"<<endl;
+                    continue;
+
+                }
                 cout << "[Juego] Expulsado: " << exp << endl;
                 *expulsado = exp;
             }
@@ -225,11 +225,6 @@ int main(){
                     *sumacumuladaux = 0;
                     *sincronizadorbool = 0;
                     *sincro=0;
-                for(int i = 1; i <= n; i++){
-                    if(expulsados[i] == 1){
-                        cout<<"el jugador en la pos: "<<i<<" esta expulsado "<<endl;
-                    }
-                }
             }
             exp = 0;             
             sillas--;
@@ -252,7 +247,10 @@ int main(){
         
     }
     unlink(FIFO_NAME);
-
+    if (shmdt(base) == -1) {
+        perror("Error desmontando segmento de memoria compartida");
+        exit(1);
+    }
     
     return(0);
 }
