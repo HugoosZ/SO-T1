@@ -16,6 +16,6 @@ using namespace std;
 
 int main(){
 
-    cout<<" me amurré, no toi ni ahí, xao "<<endl;
+    cout<<"Me amurré, no toi ni ahí, xao "<<endl;
     return 0;
 }

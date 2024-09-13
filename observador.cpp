@@ -55,7 +55,7 @@ int main(){
         cout<<"-------------------------"<<endl;
         for (int i = 0; i < n; i++) {
             if (votos[i] > 0) {
-                cout << "[Observador] Votos en contra del jugador " << i + 1 << ": " << votos[i] << endl;
+                cout << "Votos en contra del jugador " << i + 1 << ": " << votos[i] << endl;
             }
         }
         cout<<"-------------------------"<<endl;
@@ -91,7 +91,7 @@ int main(){
             continue;
         }
         write(fd, &posmayor, sizeof(posmayor));
-        cout << "[Observador] Jugador con mayor voto (a eliminar): " << posmayor << endl;
+        cout << "Jugador con mayor voto (a eliminar): " << posmayor << endl;
 
         close(fd);
 

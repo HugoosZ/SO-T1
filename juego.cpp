@@ -23,10 +23,10 @@ int main(){
             cerr << "Error al compilar Observador.cpp" << endl;
             return 1;
     }
-    //if (system("./Observador &") == -1) { //ejecución observador
-      //          cerr << "Error al ejecutar el observador" << endl;
-         //       return 1;
-    //}
+    if (system("./Observador &") == -1) { //ejecución observador
+            cerr << "Error al ejecutar el observador" << endl;
+            return 1;
+    }
     cout << "[Juego] Iniciando proceso principal." << endl;
     srand(time(NULL) + getpid());
     int fd,sumt= 0;
@@ -62,7 +62,7 @@ int main(){
     int contadordeexpulsados = 0;
     int contadordeexpulsadosfinal=0;
 
-    cout<<"El tiempo de la cancion es" <<*time<<endl;
+    cout<<"El tiempo de la cancion es " <<*time<<endl;
 
     cout << "[Juego] Ingrese el número de jugadores: ";
 
@@ -71,12 +71,9 @@ int main(){
         cout << "[Juego] Deben haber al menos 2 jugadores." << endl;
         cin >> n;
     }
-    
     cout<<"La cantidad de jugadores es "<<n<<endl;
     fd = open(FIFO_NAME, O_WRONLY);
-    cout<<"[Juego] apertura de fifo con valor" <<fd<<endl;
     write(fd, &n, sizeof(n));
-    cout << "[Juego] Enviando cantidad de jugadores: " << n << " a observador." << endl;
     close(fd);
 
     if (access(FIFO_NAME, F_OK) != 0) { 
@@ -85,9 +82,7 @@ int main(){
             exit(-1);
         }
         cout << "[Juego] FIFO creado: " << FIFO_NAME << endl;
-    } else {
-        cout << "[Juego] FIFO ya existe, omitiendo la creación." << endl;
-    }
+    } 
 
     pid_t pid;
     int pos = 0;
@@ -95,8 +90,6 @@ int main(){
     for(int i = 0; i <= n; i++){
         expulsados[i] = 0;
     }
-
-
 
     for (int i = 1; i <= n; i++) {
         if ((pid = fork()) == -1) {
@@ -106,7 +99,6 @@ int main(){
         else if (pid == 0) {
             pos = i;
             srand(time(NULL) + getpid());
-
             break;
         }
     }
@@ -124,20 +116,19 @@ int main(){
     int sillas = n-1;
     *liberador = 0;
 
-
-    
+        if(pos == 0){ 
+            cout<<"Cantidad de sillas "<<sillas<<endl;
+            cout<<"El tiempo de la cancion es " <<*t<<endl;
+        }
+        sleep(*t);
         while (sillas > 0 ) {
+
             int vote = 0;
-
-            if(pos == 0){
-                cout<<"Cantidad de sillas "<<sillas<<endl;
-            }
-
             vote = (rand() % n) + 1;
             if(pos>0){
                 fd = open(FIFO_NAME, O_WRONLY);
 
-            while (expulsados[vote] != 0) {
+            while (expulsados[vote] != 0) { //punto de control hasta que el voto sea valido
                 vote = (rand() % n) + 1;
             }
                 
@@ -148,72 +139,50 @@ int main(){
 
                     }
                 }
-                    cout<<"El voto del proceso "<<pos<<" es "<<vote<<endl;
-            }
-
+            }//aca hay un punto de control hasta que todos los votantes voten
             while(*sincronizadorbool == 0){
                 sleep(1);
             }
             if(pos>0){
                 close(fd);
             }
-
-           
-
             if(pos>0){
                 sleep(2);
             }
-
-
-
             int exp = 0;
+
             if(pos == 0){
-                
                 fd = open(FIFO_NAME, O_RDONLY); 
                 ssize_t bytes_read = read(fd, &exp, sizeof(exp));
                 
                 close(fd);
-                if(exp == 0){
-                    cout<<"WELTAAA"<<endl;
+                if(exp == 0){//Aca se genera un problema con el observador que falla la comunicacion y no se setea el valor, por lo cual mando a hacer denuevo el proceso. No afecta en nada el funcionamiento del juego, solo en el tiempo
                     continue;
-
                 }
-                cout << "[Juego] Expulsado: " << exp << endl;
                 *expulsado = exp;
             }
-
             while(*expulsado == 0){
                 sleep(1);
             }
-            
-
-            if(pos>0){
-            cout<<"El expulsado es "<<*expulsado<<" En el proceso " << pos<<endl;
-
-            }
             sleep(1);
             contadordeexpulsadosfinal++;
-        
                 if (pos == *expulsado && pos > 0) {
-                    cout << "[Juego] Proceso en posición " << pos << " fue eliminado!!!!!!!!!!!!!!" << endl;
+                    cout << "[Juego] Proceso en posición " << *expulsado << " fue eliminado y se amurro: ";
+
+                    sleep(2);
                     execlp("./amurra_y_reclama", "", NULL);
                 }   
                 else {
                     expulsados[*expulsado] = 1;
                     if(pos>0){
                         (*sumacumuladaux)++;
-
-
-                        while(*sumacumuladaux != *votantes-1 ){
-
-                        }
+                        while(*sumacumuladaux != *votantes-1 );
                         sleep(1);
                         *sincro = 1;
-
                     }
                 }
-                sleep(5);
 
+                sleep(5);
                 exp=0;
                 if(pos==0){
                     while(*sincro==0){
@@ -230,19 +199,23 @@ int main(){
             sillas--;
             ganadores = 0;
             contadordeexpulsados = 0;
-            
-
+            if(sillas>0){
+                if(pos == 0){
+                    cout<<"Cantidad de sillas "<<sillas<<endl;
+                    cout<<"Los jugadores se pegan el show por " <<*t<<""<<endl;
+                    *t = (rand() % 4) + 1;
+                }
+                sleep(*t);
+            }
         }
-    
-    
-    *liberador = 1;
     if(pos == 0){
         wait(NULL);
-        cout<<"Termino el padre"<<endl;
+        while (*liberador == 0);
         exit(0);
     }
     else{
         cout << "Proceso en posición " << pos << " GANOooooOOOOO!." << endl;
+        (*liberador)++;
         exit(0);
         
     }
