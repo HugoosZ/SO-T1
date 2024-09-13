@@ -17,7 +17,7 @@
 using namespace std;
 
 int main(){
-    srand(static_cast<unsigned int>(std::time(nullptr)));
+    srand(time(NULL) + getpid());
 
     if (access(FIFO_NAME, F_OK) != 0) { 
         if (mkfifo(FIFO_NAME, 0666) == -1) {
