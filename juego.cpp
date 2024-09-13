@@ -23,6 +23,10 @@ int main(){
             cerr << "Error al compilar Observador.cpp" << endl;
             return 1;
     }
+    if (system("g++ ./amurra_y_reclama.cpp") != 0) { 
+        cerr << "Error al compilar Observador.cpp" << endl;
+        return 1;
+    }
     if (system("./Observador &") == -1) { //ejecución observador
             cerr << "Error al ejecutar el observador" << endl;
             return 1;
