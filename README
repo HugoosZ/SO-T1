@@ -1,1 +1,2 @@
-Para iniciar, compilar solamente juego, se puede hacer mediante make y luego make run-juego
+Para iniciar, compilar solamente juego, se puede compilar de forma normal(compilando e iniciando juego), o mediante make y luego make run-juego
+Use una estructura de posiciones, por lo cual todo el rato se comunicacion los procesos mediante posiciones
