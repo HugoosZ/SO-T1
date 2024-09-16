@@ -19,7 +19,7 @@
 using namespace std;
 
 int main(){
-    if (system("g++ ./observador.cpp") != 0) { 
+    if (system("g++ ./observador.cpp -o observador") != 0) { 
             cerr << "Error al compilar Observador.cpp" << endl;
             return 1;
     }
